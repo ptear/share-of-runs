@@ -1,0 +1,15 @@
+season,player,name,colour,teams,role,innings,runs,average,high_score_disp,median_pct_match_runs,share_team_runs,top_scorer_rate,composite_pctl,rk,pool
+2022,JM Cox,Jordan Cox,#1baf7a,Kent,Middle order,20,917,45.85,158,7.855,14.874,30.0,94.7,7.0,95
+2023,JM Cox,Jordan Cox,#1baf7a,Kent,All-rounder / keeper,17,385,24.062,133,3.373,8.859,5.882,51.7,60.0,98
+2024,JM Cox,Jordan Cox,#1baf7a,Essex,Middle order,15,918,65.571,207,7.072,18.441,46.667,95.4,9.0,90
+2025,JM Cox,Jordan Cox,#1baf7a,Essex,Middle order,12,650,59.091,132,7.807,15.591,41.667,95.8,4.0,91
+2022,SR Hain,Sam Hain,#2a78d6,Warwickshire,Middle order,21,1137,63.167,202*,11.253,19.905,33.333,98.0,2.0,95
+2023,SR Hain,Sam Hain,#2a78d6,Warwickshire,Middle order,16,706,47.067,165*,7.906,17.078,25.0,94.8,3.0,98
+2024,SR Hain,Sam Hain,#2a78d6,Warwickshire,Middle order,13,430,39.091,153*,4.261,12.004,15.385,63.3,41.0,90
+2025,SR Hain,Sam Hain,#2a78d6,Warwickshire,Middle order,18,734,52.429,87*,6.903,14.94,33.333,94.2,8.0,91
+2026,SR Hain,Sam Hain,#2a78d6,Warwickshire,Middle order,19,906,69.692,164*,7.91,17.02,36.842,95.6,4.0,84
+2022,TB Abell,Tom Abell,#eb6834,Somerset,Middle order,22,1039,51.95,150*,7.895,16.886,27.273,93.5,6.0,95
+2023,TB Abell,Tom Abell,#eb6834,Somerset,Middle order,21,622,31.1,151,3.806,10.261,9.524,58.0,45.0,98
+2024,TB Abell,Tom Abell,#eb6834,Somerset,Middle order,15,658,50.615,152*,5.446,17.078,26.667,90.8,23.0,90
+2025,TB Abell,Tom Abell,#eb6834,Somerset,Middle order,23,1022,51.1,156,7.218,15.563,13.043,85.9,6.0,91
+2026,TB Abell,Tom Abell,#eb6834,Somerset,Middle order,16,974,64.933,119,10.679,18.329,37.5,98.1,2.0,84

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Average vs Share</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{--ground:#f4f5f0; --panel:#fff; --ink:#1b2620; --ink-soft:#5c6a62; --rule:#dcdfd6;
+  --rule-soft:#e9ebe3; --turf:#3f6b4c; --turf-soft:#e2ece4; --shade:#8a9a8f}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ground:#121613; --panel:#191f1b; --ink:#e7ece7; --ink-soft:#9daba2; --rule:#2b3630;
+  --rule-soft:#222b26; --turf:#7fbd92; --turf-soft:#1f2d24; --shade:#6f7f75}}
+:root[data-theme="dark"]{--ground:#121613; --panel:#191f1b; --ink:#e7ece7;
+  --ink-soft:#9daba2; --rule:#2b3630; --rule-soft:#222b26; --turf:#7fbd92;
+  --turf-soft:#1f2d24; --shade:#6f7f75}
+*{box-sizing:border-box}
+body{background:var(--ground); color:var(--ink); margin:0; padding-inline:16px;
+  padding-block:28px 56px; font-family:"IBM Plex Sans",system-ui,sans-serif}
+.wrap{max-width:1120px; margin:0 auto}
+h1{font-family:Bitter,Georgia,serif; font-size:clamp(24px,3.6vw,34px); margin:0 0 6px;
+  text-wrap:balance}
+.sub{color:var(--ink-soft); max-width:66ch; line-height:1.55; font-size:14.5px; margin:0 0 20px}
+
+.nav{display:flex; gap:18px; align-items:baseline; flex-wrap:wrap;
+  padding-block:0 18px; margin-bottom:22px; border-bottom:1px solid var(--rule)}
+.nav a{color:var(--ink-soft); text-decoration:none; font-size:13px}
+.nav a:hover{color:var(--turf)}
+.nav a[aria-current="page"]{color:var(--turf); font-weight:600}
+.nav .brand{font-family:Bitter,Georgia,serif; font-weight:700; font-size:15px;
+  color:var(--ink); margin-right:6px}
+
+.controls{display:flex; flex-wrap:wrap; gap:8px 20px; align-items:center; margin-bottom:6px}
+.group{display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+.group .lab{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--shade); margin-right:4px}
+.tab{appearance:none; border:1px solid var(--rule); background:var(--panel);
+  color:var(--ink-soft); font:500 12.5px "IBM Plex Sans",sans-serif; padding:7px 11px;
+  cursor:pointer}
+.tab[aria-pressed="true"]{background:var(--turf); border-color:var(--turf); color:#fff}
+.tab:focus-visible{outline:2px solid var(--turf); outline-offset:2px}
+.note{font-size:12.5px; color:var(--ink-soft); line-height:1.55; max-width:74ch;
+  border-left:2px solid var(--turf); padding:2px 0 2px 12px; margin:16px 0}
+.pane{margin-top:14px}
+.blurb{font-size:13px; color:var(--ink-soft); margin:0 0 10px}
+iframe{width:100%; height:760px; border:1px solid var(--rule); background:var(--panel)}
+img{max-width:100%; border:1px solid var(--rule); background:var(--panel)}
+.open{font-size:12.5px; margin:10px 0 0}
+.open a, .sub a{color:var(--turf)}
+</style>
+
+<div class="wrap">
+  <nav class="nav">
+  <a class="brand" href="index.html">Share of Runs</a>
+  <a href="index.html" data-page="index">Rankings table</a>
+  <a href="charts.html" data-page="charts" aria-current="page">Average vs share</a>
+  <a href="data/">Data</a>
+</nav>
+  <h1>Two views of the same five seasons</h1>
+  <p class="sub"><b>Average vs share</b> plots the conventional measure against the
+  pitch-normalised one; <b>rank by season</b> tracks the three best batters on median share
+  over time. Each is drawn by all six plotting libraries from one shared dataset.
+  Division 1 specialist batters, 2022&ndash;2026, minimum 12 innings in a season.
+  The horizontal axis is the conventional batting average; the vertical axis is the median
+  share of all runs scored in the match. The quadrants split at the field medians, so the
+  off-diagonal corners are the interesting ones: high average with a low share means the runs
+  came when runs were cheap. Numbers 8&ndash;11 are excluded rather than clipped, which keeps
+  poor top-order batters visible in the bottom-left.</p>
+
+  <div class="controls">
+    <div class="group"><span class="lab">Chart</span>
+      <button class="tab" data-chart="scatter" aria-pressed="true">Average vs share</button>
+      <button class="tab" data-chart="ranks">Rank by season</button></div>
+    <div class="group"><span class="lab">Library</span><button class="tab" data-lib="plotly" aria-pressed="true">Plotly</button><button class="tab" data-lib="altair">Altair</button><button class="tab" data-lib="bokeh">Bokeh</button><button class="tab" data-lib="matplotlib">Matplotlib</button><button class="tab" data-lib="seaborn">Seaborn</button><button class="tab" data-lib="plotnine">plotnine</button></div>
+    <div class="group" id="modegroup"><span class="lab">Colour by</span><button class="tab" data-mode="performers" aria-pressed="true">Top performers</button><button class="tab" data-mode="position">Batting position</button><button class="tab" data-mode="team">County</button></div>
+  </div>
+  <p class="note" id="modenote"></p>
+  <section class="pane" data-lib="plotly" data-chart="scatter" data-mode="performers" hidden><p class="blurb"><b>Plotly</b> — Season buttons across the top; hover any point.</p><iframe src="charts/plotly_performers.html" title="Plotly, Top performers" loading="lazy"></iframe><p class="open"><a href="charts/plotly_performers.html" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="plotly" data-chart="scatter" data-mode="position" hidden><p class="blurb"><b>Plotly</b> — Season buttons across the top; hover any point.</p><iframe src="charts/plotly_position.html" title="Plotly, Batting position" loading="lazy"></iframe><p class="open"><a href="charts/plotly_position.html" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="plotly" data-chart="scatter" data-mode="team" hidden><p class="blurb"><b>Plotly</b> — Season buttons across the top; hover any point.</p><iframe src="charts/plotly_team.html" title="Plotly, County" loading="lazy"></iframe><p class="open"><a href="charts/plotly_team.html" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="altair" data-chart="scatter" data-mode="performers" hidden><p class="blurb"><b>Altair</b> — Vega-Lite. Season dropdown below the chart; click a legend entry to isolate it.</p><iframe src="charts/altair_performers.html" title="Altair, Top performers" loading="lazy"></iframe><p class="open"><a href="charts/altair_performers.html" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="altair" data-chart="scatter" data-mode="position" hidden><p class="blurb"><b>Altair</b> — Vega-Lite. Season dropdown below the chart; click a legend entry to isolate it.</p><iframe src="charts/altair_position.html" title="Altair, Batting position" loading="lazy"></iframe><p class="open"><a href="charts/altair_position.html" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="altair" data-chart="scatter" data-mode="team" hidden><p class="blurb"><b>Altair</b> — Vega-Lite. Season dropdown below the chart; click a legend entry to isolate it.</p><iframe src="charts/altair_team.html" title="Altair, County" loading="lazy"></iframe><p class="open"><a href="charts/altair_team.html" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="bokeh" data-chart="scatter" data-mode="performers" hidden><p class="blurb"><b>Bokeh</b> — Season dropdown above the chart; click legend entries to hide series. BokehJS is inlined, so this page is ~2 MB.</p><iframe src="charts/bokeh_performers.html" title="Bokeh, Top performers" loading="lazy"></iframe><p class="open"><a href="charts/bokeh_performers.html" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="bokeh" data-chart="scatter" data-mode="position" hidden><p class="blurb"><b>Bokeh</b> — Season dropdown above the chart; click legend entries to hide series. BokehJS is inlined, so this page is ~2 MB.</p><iframe src="charts/bokeh_position.html" title="Bokeh, Batting position" loading="lazy"></iframe><p class="open"><a href="charts/bokeh_position.html" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="bokeh" data-chart="scatter" data-mode="team" hidden><p class="blurb"><b>Bokeh</b> — Season dropdown above the chart; click legend entries to hide series. BokehJS is inlined, so this page is ~2 MB.</p><iframe src="charts/bokeh_team.html" title="Bokeh, County" loading="lazy"></iframe><p class="open"><a href="charts/bokeh_team.html" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="matplotlib" data-chart="scatter" data-mode="performers" hidden><p class="blurb"><b>Matplotlib</b> — All six panels in one image, drawn directly.</p><a href="charts/matplotlib_grid_performers.png"><img src="charts/matplotlib_grid_performers.png" alt="Matplotlib, Top performers" loading="lazy"></a><p class="open"><a href="charts/matplotlib_grid_performers.png" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="matplotlib" data-chart="scatter" data-mode="position" hidden><p class="blurb"><b>Matplotlib</b> — All six panels in one image, drawn directly.</p><a href="charts/matplotlib_grid_position.png"><img src="charts/matplotlib_grid_position.png" alt="Matplotlib, Batting position" loading="lazy"></a><p class="open"><a href="charts/matplotlib_grid_position.png" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="matplotlib" data-chart="scatter" data-mode="team" hidden><p class="blurb"><b>Matplotlib</b> — All six panels in one image, drawn directly.</p><a href="charts/matplotlib_grid_team.png"><img src="charts/matplotlib_grid_team.png" alt="Matplotlib, County" loading="lazy"></a><p class="open"><a href="charts/matplotlib_grid_team.png" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="seaborn" data-chart="scatter" data-mode="performers" hidden><p class="blurb"><b>Seaborn</b> — relplot facets over the same data.</p><a href="charts/seaborn_facets_performers.png"><img src="charts/seaborn_facets_performers.png" alt="Seaborn, Top performers" loading="lazy"></a><p class="open"><a href="charts/seaborn_facets_performers.png" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="seaborn" data-chart="scatter" data-mode="position" hidden><p class="blurb"><b>Seaborn</b> — relplot facets over the same data.</p><a href="charts/seaborn_facets_position.png"><img src="charts/seaborn_facets_position.png" alt="Seaborn, Batting position" loading="lazy"></a><p class="open"><a href="charts/seaborn_facets_position.png" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="seaborn" data-chart="scatter" data-mode="team" hidden><p class="blurb"><b>Seaborn</b> — relplot facets over the same data.</p><a href="charts/seaborn_facets_team.png"><img src="charts/seaborn_facets_team.png" alt="Seaborn, County" loading="lazy"></a><p class="open"><a href="charts/seaborn_facets_team.png" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="plotnine" data-chart="scatter" data-mode="performers" hidden><p class="blurb"><b>plotnine</b> — Grammar of graphics, ggplot2-style.</p><a href="charts/plotnine_facets_performers.png"><img src="charts/plotnine_facets_performers.png" alt="plotnine, Top performers" loading="lazy"></a><p class="open"><a href="charts/plotnine_facets_performers.png" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="plotnine" data-chart="scatter" data-mode="position" hidden><p class="blurb"><b>plotnine</b> — Grammar of graphics, ggplot2-style.</p><a href="charts/plotnine_facets_position.png"><img src="charts/plotnine_facets_position.png" alt="plotnine, Batting position" loading="lazy"></a><p class="open"><a href="charts/plotnine_facets_position.png" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="plotnine" data-chart="scatter" data-mode="team" hidden><p class="blurb"><b>plotnine</b> — Grammar of graphics, ggplot2-style.</p><a href="charts/plotnine_facets_team.png"><img src="charts/plotnine_facets_team.png" alt="plotnine, County" loading="lazy"></a><p class="open"><a href="charts/plotnine_facets_team.png" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="plotly" data-chart="ranks" hidden><p class="blurb"><b>Plotly</b> — Season buttons across the top; hover any point.</p><iframe src="charts/ranks_plotly.html" title="Plotly, rank trajectory" loading="lazy"></iframe><p class="open"><a href="charts/ranks_plotly.html" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="altair" data-chart="ranks" hidden><p class="blurb"><b>Altair</b> — Vega-Lite. Season dropdown below the chart; click a legend entry to isolate it.</p><iframe src="charts/ranks_altair.html" title="Altair, rank trajectory" loading="lazy"></iframe><p class="open"><a href="charts/ranks_altair.html" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="bokeh" data-chart="ranks" hidden><p class="blurb"><b>Bokeh</b> — Season dropdown above the chart; click legend entries to hide series. BokehJS is inlined, so this page is ~2 MB.</p><iframe src="charts/ranks_bokeh.html" title="Bokeh, rank trajectory" loading="lazy"></iframe><p class="open"><a href="charts/ranks_bokeh.html" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="matplotlib" data-chart="ranks" hidden><p class="blurb"><b>Matplotlib</b> — All six panels in one image, drawn directly.</p><a href="charts/ranks_matplotlib.png"><img src="charts/ranks_matplotlib.png" alt="Matplotlib, rank trajectory" loading="lazy"></a><p class="open"><a href="charts/ranks_matplotlib.png" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="seaborn" data-chart="ranks" hidden><p class="blurb"><b>Seaborn</b> — relplot facets over the same data.</p><a href="charts/ranks_seaborn.png"><img src="charts/ranks_seaborn.png" alt="Seaborn, rank trajectory" loading="lazy"></a><p class="open"><a href="charts/ranks_seaborn.png" target="_blank" rel="noopener">Open this view on its own →</a></p></section><section class="pane" data-lib="plotnine" data-chart="ranks" hidden><p class="blurb"><b>plotnine</b> — Grammar of graphics, ggplot2-style.</p><a href="charts/ranks_plotnine.png"><img src="charts/ranks_plotnine.png" alt="plotnine, rank trajectory" loading="lazy"></a><p class="open"><a href="charts/ranks_plotnine.png" target="_blank" rel="noopener">Open this view on its own →</a></p></section>
+</div>
+
+<script>
+const NOTES = {"performers": "Coloured: the three players with the best mean season rank on median share of match runs, among the 34 with at least four qualifying Division 1 seasons since 2022. Their means are 11.6, 16.4 and 20.0; the next five sit between 22.4 and 23.3, so the cut falls in a real gap rather than at an arbitrary top-N. Everyone else is grey; marker shape shows batting position.", "position": "Coloured by the band holding most of a player's innings. The three highlighted batters keep a dark ring so they stay findable.", "team": "Coloured by county. Seventeen counties appear across the five seasons and no seventeen-colour scheme stays reliably separable \u2014 least of all for colourblind readers \u2014 so treat this as exploratory: identify points from the hover in the interactive versions rather than from the colour alone."};
+const RANK_NOTE = "Rank on median % of match runs within each season's qualified pool (12 innings, 84\u201398 batters), best at the top on a log scale. A gap is a season the player did not qualify \u2014 Cox has no 2026 \u2014 and is left open rather than interpolated.";
+let lib = "plotly", mode = "performers", chart = "scatter";
+function show() {
+  document.querySelectorAll('.pane').forEach(p => {
+    p.hidden = !(p.dataset.lib === lib && p.dataset.chart === chart &&
+                 (chart === "ranks" || p.dataset.mode === mode));
+  });
+  document.getElementById('modegroup').hidden = chart !== "scatter";
+  document.querySelectorAll('.tab[data-chart]').forEach(b =>
+    b.setAttribute('aria-pressed', b.dataset.chart === chart));
+  document.querySelectorAll('[data-lib]').forEach(b => {
+    if (b.classList.contains('tab')) b.setAttribute('aria-pressed', b.dataset.lib === lib);
+  });
+  document.querySelectorAll('[data-mode]').forEach(b => {
+    if (b.classList.contains('tab')) b.setAttribute('aria-pressed', b.dataset.mode === mode);
+  });
+  document.getElementById('modenote').textContent =
+    chart === "ranks" ? RANK_NOTE : NOTES[mode];
+}
+document.querySelectorAll('.tab[data-lib]').forEach(b =>
+  b.onclick = () => { lib = b.dataset.lib; show(); });
+document.querySelectorAll('.tab[data-mode]').forEach(b =>
+  b.onclick = () => { mode = b.dataset.mode; show(); });
+document.querySelectorAll('.tab[data-chart]').forEach(b =>
+  b.onclick = () => { chart = b.dataset.chart; show(); });
+show();
+</script>
+
+</html>
