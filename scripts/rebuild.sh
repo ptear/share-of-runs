@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Rebuild the whole site from the latest Cricsheet archive.
 #
-#   ./scripts/rebuild.sh                 download, rebuild if the archive changed
-#   ./scripts/rebuild.sh --force         rebuild even if the archive is unchanged
+#   ./scripts/rebuild.sh                 download; rebuild only if the archive changed
+#   ./scripts/rebuild.sh --charts        skip the ETL, re-render charts and site
+#                                        (what you want after a code change)
+#   ./scripts/rebuild.sh --force         re-run everything including the ETL
 #   ./scripts/rebuild.sh --zip FILE      use a local archive instead of downloading
 #   ./scripts/rebuild.sh --workdir DIR   working folder (default: ./build)
 #
@@ -16,11 +18,13 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
 WORK="$ROOT/build"
 FORCE=0
+CHARTS=0
 LOCAL_ZIP=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --force)   FORCE=1; shift ;;
+    --charts)  CHARTS=1; shift ;;
     --zip)     LOCAL_ZIP="$2"; shift 2 ;;
     --workdir) WORK="$2"; shift 2 ;;
     -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
@@ -54,10 +58,19 @@ MATCHES="$(unzip -p "$ZIP" README.txt 2>/dev/null | grep -o '[0-9,]* County Cham
 echo "   archive: $MATCHES"
 
 # ---------------------------------------------------------------- 2. ETL, if it changed
-if [ "$FORCE" -eq 0 ] && [ -f "$STAMP" ] && [ "$SHA" = "$(cat "$STAMP")" ] \
-   && [ -f innings_bat.csv ] && [ -f matches.csv ]; then
-  echo "── archive unchanged since the last build; reusing innings_bat.csv / matches.csv"
-  echo "   (./scripts/rebuild.sh --force re-runs the ETL anyway)"
+UNCHANGED=0
+if [ -f "$STAMP" ] && [ "$SHA" = "$(cat "$STAMP")" ] \
+   && [ -f innings_bat.csv ] && [ -f matches.csv ]; then UNCHANGED=1; fi
+
+if [ "$UNCHANGED" -eq 1 ] && [ "$FORCE" -eq 0 ] && [ "$CHARTS" -eq 0 ]; then
+  echo "── archive unchanged since the last build — nothing to do."
+  echo "   --charts re-renders from the existing data (after a code change)"
+  echo "   --force  re-runs the ETL as well"
+  exit 0
+fi
+
+if [ "$UNCHANGED" -eq 1 ] && [ "$FORCE" -eq 0 ]; then
+  echo "── archive unchanged; reusing innings_bat.csv / matches.csv"
 else
   echo "── unpacking and running the ETL"
   rm -f [0-9]*.json                  # stale match files would be picked up by the glob
