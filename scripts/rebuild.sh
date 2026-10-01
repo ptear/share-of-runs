@@ -56,6 +56,26 @@ fi
 SHA="$(sha256sum "$ZIP" | cut -d' ' -f1)"
 MATCHES="$(unzip -p "$ZIP" README.txt 2>/dev/null | grep -o '[0-9,]* County Championship matches' || echo 'unknown match count')"
 echo "   archive: $MATCHES"
+# Latest match date in the archive itself — the thing that tells you whether new
+# rounds have landed. Reads the head of each member rather than unpacking.
+# Plain python3 on purpose: stdlib only, and `uv run python -` does not forward
+# a heredoc on stdin.
+LATEST="$(python3 - <<'PY' 2>/dev/null || echo unknown
+import re, sys, zipfile
+z = zipfile.ZipFile("cch_male_json.zip")
+best = ""
+for n in z.namelist():
+    if not n[:-5].isdigit():
+        continue
+    with z.open(n) as f:
+        head = f.read(4096).decode("utf-8", "replace")
+    for d in re.findall(r'"(\d{4}-\d{2}-\d{2})"', head):
+        if d > best:
+            best = d
+print(best or "unknown")
+PY
+)"
+echo "   latest match in the archive: $LATEST"
 
 # ---------------------------------------------------------------- 2. ETL, if it changed
 UNCHANGED=0
@@ -81,13 +101,6 @@ else
   rm -f [0-9]*.json
   echo "$SHA" > "$STAMP"
 fi
-
-echo "   latest match date in the data: $(
-  python3 - <<'PY' 2>/dev/null || echo unknown
-import csv
-print(max(r["date"] for r in csv.DictReader(open("matches.csv"))))
-PY
-)"
 
 # ---------------------------------------------------------------- 3. metrics, charts, site
 cp "$HERE"/*.py "$HERE/page_template.html" "$WORK/"

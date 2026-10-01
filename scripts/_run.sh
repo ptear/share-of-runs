@@ -4,7 +4,7 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "── $*"
+echo "── $*" >&2   # progress goes to stderr so callers can capture stdout
 if command -v uv >/dev/null 2>&1; then
   # ephemeral environment from requirements.txt — nothing to create or activate
   exec uv run --quiet --with-requirements "$HERE/requirements.txt" python "$@"
