@@ -1,0 +1,10 @@
+# Versions this pipeline was built and tested against.
+# Loosened to >= so uv can resolve; pin with == if a future release breaks a chart.
+pandas>=2.2
+numpy>=1.26
+matplotlib>=3.8
+seaborn>=0.13
+plotly>=5.20
+altair>=5.3
+bokeh>=3.4
+plotnine>=0.13

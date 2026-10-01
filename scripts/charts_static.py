@@ -46,6 +46,23 @@ def quad_labels(ax):
                     color=INK_SOFT, style="italic", zorder=3)
 
 
+# stack labels vertically on the same side: side-swapping made close pairs collide
+OFFSETS = [(8, -2), (8, 13), (8, -17), (8, 28), (8, -32), (8, 43)]
+
+
+def label_offsets(pts):
+    """pts: list of (x, y). Returns an offset per point, alternating within any
+    cluster of points close enough that fixed offsets would collide."""
+    xr, yr = XL[1] - XL[0], YL[1] - YL[0]
+    placed, out = [], []
+    for x, y in pts:
+        near = sum(1 for px, py in placed
+                   if abs(px - x) < .13 * xr and abs(py - y) < .09 * yr)
+        out.append(OFFSETS[near % len(OFFSETS)])
+        placed.append((x, y))
+    return out
+
+
 def panel(ax, d, title, mode, quads=False, labels=None):
     """labels: default is on for 'performers', off elsewhere."""
     if labels is None:
@@ -59,12 +76,15 @@ def panel(ax, d, title, mode, quads=False, labels=None):
         if len(r):
             ax.scatter(r.average, r.med_pct_match, s=20 if mode != "performers" else 16,
                        marker=mk, color=r[col], edgecolor="none", zorder=2)
-    for _, r in d[is_hl].iterrows():
+    hl = d[is_hl].sort_values("average")
+    offs = label_offsets(list(zip(hl.average, hl.med_pct_match)))
+    for (_, r), off in zip(hl.iterrows(), offs):
         ax.scatter(r.average, r.med_pct_match, s=60, marker=ROLE_MARKER.get(r.role, "o"),
                    color=r[col], edgecolor=INK if mode != "performers" else SURFACE,
                    linewidth=1.1 if mode != "performers" else 1.3, zorder=4)
         if labels:
-            ax.annotate(r.label, (r.average, r.med_pct_match), xytext=(7, -2),
+            ax.annotate(r.label, (r.average, r.med_pct_match), xytext=off,
+                        ha="right" if off[0] < 0 else "left",
                         textcoords="offset points", fontsize=7.4, color=r[col],
                         fontweight="bold", zorder=5)
     if quads:
@@ -87,7 +107,7 @@ def legend_handles(mode, d):
 
 
 SUBTITLE = {
-    "performers": "coloured by the four repeat top-five finishers",
+    "performers": "coloured by the three best mean season ranks on median share (min 4 qualifying seasons)",
     "position": "coloured by batting position (marker shape matches)",
     "team": "coloured by county — exploratory only; 17 hues are not reliably separable",
 }

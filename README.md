@@ -34,17 +34,57 @@ GitHub serves every file as-is.
 
 ## Rebuilding
 
+One command. It downloads the current Cricsheet archive, rebuilds everything and
+copies the finished site over the repository root:
+
 ```bash
-python3 cch_etl.py            # Cricsheet JSON  ->  matches.csv, innings_bat.csv
-python3 cch_metrics.py --division 1 --min-innings 40 --min-innings-season 6
-python3 cch_metrics.py --division 2 --min-innings 40 --min-innings-season 6
-python3 chart_common.py       # scatter_data.csv
-python3 charts_static.py      # matplotlib, seaborn, plotnine
-python3 charts_interactive.py # plotly, altair, bokeh
-python3 site_build.py         # assembles site/
+./scripts/rebuild.sh
 ```
 
-Requires: pandas, matplotlib, seaborn, plotnine, plotly, altair, bokeh.
+| | |
+|---|---|
+| `--force` | re-run the ETL even if the archive is unchanged |
+| `--zip FILE` | use a local archive instead of downloading |
+| `--workdir DIR` | working folder (default `./build`) |
+
+If the downloaded archive is byte-identical to the last build's, the ETL is
+skipped and the existing `innings_bat.csv` / `matches.csv` are reused — so a
+re-run when Cricsheet has published nothing new costs seconds rather than
+minutes. The script prints the archive's match count and the latest match date
+in the data, which is how you tell whether new rounds have landed.
+
+The ~830 MB of unpacked match JSONs are deleted once the ETL has consumed them.
+The 24 MB zip is kept, so re-runs need no download and the exact snapshot a build
+came from stays on disk.
+
+### Python environment
+
+The scripts need pandas, matplotlib, seaborn, plotnine, plotly, altair and bokeh.
+They are **not** in a system Python by default — `scripts/requirements.txt` lists
+them. With [uv](https://docs.astral.sh/uv/) installed there is nothing to set up:
+each step runs via `uv run --with-requirements`, an ephemeral environment with
+nothing to create or activate.
+
+Without uv, make a virtual environment first and the scripts will use it:
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r scripts/requirements.txt
+./scripts/rebuild.sh
+```
+
+### Running a single step
+
+`scripts/_run.sh` runs one script in the same environment, from the working
+folder:
+
+```bash
+cd build && ../scripts/_run.sh cch_metrics.py --division 2 --min-innings 30
+```
+
+The pipeline in order: `cch_etl.py` (JSON → `matches.csv`, `innings_bat.csv`),
+`cch_metrics.py` per division, `chart_common.py` (`scatter_data.csv`),
+`charts_static.py`, `charts_interactive.py`, `charts_ranks.py`, `site_build.py`.
 
 ## Notes on method
 

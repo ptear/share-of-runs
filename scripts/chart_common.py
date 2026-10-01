@@ -15,11 +15,15 @@ MIN_INNINGS = 12
 
 # validated all-pairs under the dataviz checker (light surface):
 # worst CVD dE 9.2, worst normal-vision dE 16.3
+# Chosen on median % of match runs alone. Of the 34 players with at least four
+# qualifying Division 1 seasons in 2022-26, these three have the best mean season
+# rank (11.6, 16.4, 20.0); below them sit five players inside 0.85 of a rank of
+# each other, so the cut falls in a real gap rather than an arbitrary top-N.
+# Three slots also clear the all-pairs colour check a scatter needs.
 HIGHLIGHT = {
-    "SR Hain":   ("Sam Hain",    "#2a78d6"),
-    "JM Cox":    ("Jordan Cox",  "#eb6834"),
-    "JM Clarke": ("Joe Clarke",  "#1baf7a"),
-    "JM Vince":  ("James Vince", "#4a3aa7"),
+    "SR Hain":  ("Sam Hain",   "#2a78d6"),
+    "TB Abell": ("Tom Abell",  "#eb6834"),
+    "JM Cox":   ("Jordan Cox", "#1baf7a"),
 }
 SURFACE = "#fcfcfb"
 INK, INK_SOFT, GRID, FIELD = "#0b0b0b", "#52514e", "#e3e2de", "#c2c1bb"
@@ -27,7 +31,7 @@ INK, INK_SOFT, GRID, FIELD = "#0b0b0b", "#52514e", "#e3e2de", "#c2c1bb"
 ROLE_MARKER = {"Opener": "o", "Middle order": "s", "All-rounder / keeper": "^"}
 
 # --- colour modes ------------------------------------------------------------
-# "performers"  the four repeat top-five finishers, everyone else grey
+# "performers"  the three best mean season ranks on median share, else grey
 # "position"    the three specialist bands; first three palette slots, which are
 #               the set that validates under the all-pairs rule a scatter needs
 # "team"        17 counties appear across 2022-26 (10 in any one season). No
@@ -63,7 +67,7 @@ def _team_palette(names=COUNTIES):
 TEAM_COLOUR = _team_palette()
 
 MODES = {
-    "performers": "the four repeat top-five finishers",
+    "performers": "the three best mean season ranks on median share",
     "position":   "batting position band",
     "team":       "county",
 }
@@ -117,7 +121,8 @@ def load(division=1, seasons=SEASONS, min_innings=MIN_INNINGS, specialists_only=
     d = d.rename(columns={"median_pct_match_runs": "med_pct_match",
                           "share_team_runs": "pct_team_runs"})
     cols = ["season", "player", "teams", "role", "median_bat_pos", "innings", "runs",
-            "average", "high_score_disp", "med_pct_match", "pct_team_runs",
+            "average", "strike_rate", "bdry_pct", "bdry_freq", "rotate",
+            "high_score_disp", "med_pct_match", "pct_team_runs",
             "top_scorer_rate", "top3_rate", "n_top_scorer", "n_top3",
             "home_away_gap", "composite_pctl", "highlight", "label", "colour",
             "colour_performers", "colour_position", "colour_team",

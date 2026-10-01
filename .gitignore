@@ -1,0 +1,7 @@
+# the rebuild workspace: unpacked match files, the 24 MB Cricsheet zip,
+# and the intermediate CSVs. Nothing in here belongs in the repository.
+build/
+
+__pycache__/
+*.pyc
+.venv/

@@ -1,0 +1,238 @@
+<title>Share of Runs</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#f4f5f0; --panel:#ffffff; --ink:#1b2620; --ink-soft:#5c6a62;
+  --rule:#dcdfd6; --rule-soft:#e9ebe3;
+  --turf:#3f6b4c; --turf-soft:#e2ece4; --leather:#a8442a; --leather-soft:#f4e3dc;
+  --shade:#8a9a8f;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#121613; --panel:#191f1b; --ink:#e7ece7; --ink-soft:#9daba2;
+    --rule:#2b3630; --rule-soft:#222b26;
+    --turf:#7fbd92; --turf-soft:#1f2d24; --leather:#e08e6f; --leather-soft:#31221c;
+    --shade:#6f7f75;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#121613; --panel:#191f1b; --ink:#e7ece7; --ink-soft:#9daba2;
+  --rule:#2b3630; --rule-soft:#222b26;
+  --turf:#7fbd92; --turf-soft:#1f2d24; --leather:#e08e6f; --leather-soft:#31221c;
+  --shade:#6f7f75;
+}
+*{box-sizing:border-box}
+body{background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  padding-inline:16px; padding-block:28px 56px; margin:0}
+.wrap{max-width:1180px; margin:0 auto}
+h1{font-family:Bitter,Georgia,serif; font-weight:700; font-size:clamp(26px,4vw,38px);
+  letter-spacing:-.01em; margin:0 0 6px; text-wrap:balance}
+.sub{color:var(--ink-soft); max-width:62ch; line-height:1.55; margin:0 0 22px; font-size:14.5px}
+.sub b{color:var(--ink); font-weight:600}
+
+.defs{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:1px;
+  background:var(--rule); border:1px solid var(--rule); margin-bottom:26px}
+.def{background:var(--panel); padding:13px 15px}
+.def dt{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--turf); margin-bottom:5px}
+.def dd{margin:0; font-size:13px; line-height:1.5; color:var(--ink-soft)}
+
+.controls{display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center;
+  padding:12px 0; border-block:1px solid var(--rule); margin-bottom:2px;
+  position:sticky; top:env(safe-area-inset-top,0px); background:var(--ground); z-index:5}
+.seg{display:inline-flex; border:1px solid var(--rule); background:var(--panel)}
+.seg button{appearance:none; border:0; background:transparent; color:var(--ink-soft);
+  font:500 12.5px/1 "IBM Plex Sans",sans-serif; padding:8px 12px; cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--turf); color:#fff}
+.seg button:focus-visible{outline:2px solid var(--leather); outline-offset:-2px}
+label.fld{display:inline-flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink-soft)}
+input[type=search]{font:400 13px "IBM Plex Sans",sans-serif; padding:7px 9px; width:150px;
+  background:var(--panel); border:1px solid var(--rule); color:var(--ink)}
+input[type=range]{width:110px; accent-color:var(--turf)}
+select{font:500 12.5px "IBM Plex Sans",sans-serif; padding:7px 8px; background:var(--panel);
+  border:1px solid var(--rule); color:var(--ink)}
+select:focus-visible,input:focus-visible{outline:2px solid var(--turf); outline-offset:1px}
+.count{margin-left:auto; font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--shade)}
+
+.tablebox{overflow-x:auto; border:1px solid var(--rule); background:var(--panel)}
+table{border-collapse:collapse; width:100%; font-size:13px;
+  font-variant-numeric:tabular-nums}
+thead th{position:sticky; top:0; background:var(--panel); z-index:2;
+  font:600 10.5px/1.3 "IBM Plex Mono",monospace; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-soft); text-align:right; padding:10px 9px; border-bottom:1.5px solid var(--rule);
+  cursor:pointer; white-space:nowrap; vertical-align:bottom}
+thead th:first-child,thead th:nth-child(2){text-align:left}
+thead th[aria-sort]{color:var(--turf)}
+thead th .car{opacity:.45; font-size:9px}
+tbody td{padding:7px 9px; text-align:right; border-bottom:1px solid var(--rule-soft); white-space:nowrap}
+tbody tr:hover td{background:var(--turf-soft)}
+td.nm{text-align:left; font-weight:600}
+td.tm{text-align:left; color:var(--ink-soft); font-size:11.5px; max-width:190px;
+  overflow:hidden; text-overflow:ellipsis}
+td.rk{color:var(--shade); font-family:"IBM Plex Mono",monospace; font-size:11.5px}
+.bar{position:relative; isolation:isolate}
+.bar::before{content:""; position:absolute; inset:2px auto 2px 2px; width:var(--w,0%);
+  background:var(--turf-soft); z-index:-1}
+.gap-pos{color:var(--leather)} .gap-neg{color:var(--turf)}
+.role{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.04em;
+  color:var(--ink-soft); border:1px solid var(--rule); padding:1px 5px; cursor:help}
+.pill{display:inline-block; min-width:42px; padding:2px 6px; font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px; background:var(--turf-soft); color:var(--turf); font-weight:500}
+.note{margin-top:18px; font-size:12px; color:var(--shade); line-height:1.6; max-width:78ch}
+.note code{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--ink-soft)}
+@media (max-width:620px){ .count{margin-left:0} td.tm{display:none} thead th.tm{display:none} }
+</style>
+
+<div class="wrap">
+  <h1>Share of runs, not runs</h1>
+  <p class="sub">County Championship batting, <b>2014&ndash;2026</b>, rebuilt from Cricsheet ball-by-ball data for every one of the 1,467 matches. Every column below is a <b>share</b> or a <b>rank</b>, so a season of 300-run pitches at Taunton and a season of green seamers at Chelmsford are read on the same footing. Pick a single season or the whole era; qualification and division are yours to set.</p>
+
+  <dl class="defs">
+    <div class="def"><dt>% of match runs</dt><dd>A batter's runs in a match over <em>every</em> run scored in it &mdash; all four innings, both sides, extras included. Median is the honest middle; mean is pulled by the double hundreds.</dd></div>
+    <div class="def"><dt>Share of team runs</dt><dd>His runs over his team's totals in the innings he batted. Around 9% is par for a top-seven batter.</dd></div>
+    <div class="def"><dt>Top scorer / top 3</dt><dd>Innings finishing first, or in the first three, among his own side's scorers. Ties share the better rank.</dd></div>
+    <div class="def"><dt>HS</dt><dd>Best individual innings within the selected scope; <em>*</em> marks a not-out.</dd></div>
+    <div class="def"><dt>Bdry % &amp; rotate</dt><dd>Share of a batter's runs made in fours and sixes, and runs per 100 balls that did <em>not</em> go to the boundary &mdash; a strike-rotation proxy. Two batters can share a boundary share by opposite routes: heavy rotation, or simply few boundaries.</dd></div>
+    <div class="def"><dt>Pos &amp; role</dt><dd>Median batting position, and the band holding most of his innings: <em>OPN</em> 1&ndash;2, <em>MID</em> 3&ndash;5, <em>A-R</em> 6&ndash;7, <em>LOW</em> 8&ndash;11. Hover for the share behind it.</dd></div>
+    <div class="def"><dt>Home gap</dt><dd>Team-runs share at his county's own grounds minus the same away. Positive means the home ground flattered him.</dd></div>
+  </dl>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Division">
+      <button id="d1" data-div="1" aria-pressed="true">Division 1</button>
+      <button id="d2" data-div="2" aria-pressed="false">Division 2</button>
+    </div>
+    <label class="fld" for="scope">Seasons
+      <select id="scope"></select></label>
+    <label class="fld" for="role">Position
+      <select id="role">
+        <option value="all">All positions</option>
+        <option value="Opener">Openers (1&ndash;2)</option>
+        <option value="Middle order">Middle order (3&ndash;5)</option>
+        <option value="All-rounder / keeper">All-rounder / keeper (6&ndash;7)</option>
+        <option value="Lower order">Lower order (8&ndash;11)</option>
+      </select></label>
+    <label class="fld" for="minin">Min innings <span id="minlab" style="font-family:'IBM Plex Mono',monospace;color:var(--ink)">40</span>
+      <input type="range" id="minin" min="10" max="120" step="5" value="40"></label>
+    <label class="fld" for="q">Find <input type="search" id="q" placeholder="player or county"></label>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="tablebox">
+    <table>
+      <thead><tr id="head"></tr></thead>
+      <tbody id="body"></tbody>
+    </table>
+  </div>
+
+  <p class="note">Home grounds are inferred from the venue each county appears at in every match played there &mdash; all 44 grounds resolve cleanly, outgrounds (Scarborough, Southport, Guildford, Cheltenham) included. 2021 is in the Division&nbsp;1 pool as Group&nbsp;1 of that season's three conference groups; drop it with <code>--exclude-2021</code> in the script. Aggregate run totals reconcile exactly with the published 2025 Division&nbsp;1 leaders. Positions come from arrival at the crease, striker and non-striker together, so an opener who never takes strike still reads as 2. A role is only as clean as its scope: Chris Rogers opened for Middlesex and batted three at Somerset, so his career row reads MID while his 2014 row reads OPN. Source: Cricsheet <code>cch_male_json</code>.</p>
+</div>
+
+<script id="payload" type="application/json">__DATA__</script>
+<script>
+const DATA = JSON.parse(document.getElementById('payload').textContent);
+const COLS = [
+  {k:'rank', t:'#', cls:'rk', fmt:(v)=>v},
+  {k:'player', t:'Player', cls:'nm'},
+  {k:'teams', t:'County', cls:'tm'},
+  {k:'median_bat_pos', t:'Pos', d:1},
+  {k:'role', t:'Role', role:true},
+  {k:'innings', t:'Inns', d:0},
+  {k:'runs', t:'Runs', d:0},
+  {k:'high_score_disp', t:'HS', sortK:'high_score', raw:true},
+  {k:'average', t:'Avg', d:1},
+  {k:'strike_rate', t:'SR', d:1},
+  {k:'bdry_pct', t:'Bdry %', d:1},
+  {k:'rotate', t:'Rotate', d:1},
+  {k:'median_pct_match_runs', t:'Med % match', d:2, bar:12},
+  {k:'mean_pct_match_runs', t:'Mean % match', d:2},
+  {k:'share_team_runs', t:'% team runs', d:2, bar:25},
+  {k:'n_top_scorer', t:'Top scorer', d:0},
+  {k:'top_scorer_rate', t:'Top %', d:1},
+  {k:'n_top3', t:'Top 3', d:0},
+  {k:'top3_rate', t:'Top 3 %', d:1},
+  {k:'pct_runs_at_home_ground', t:'% runs home', d:1},
+  {k:'home_away_gap', t:'Home gap', d:2, signed:true},
+  {k:'composite_pctl', t:'Composite', d:1, pill:true}
+];
+const SEASONS = DATA._seasons;
+const ROLE_CODE = {'Opener':'OPN', 'Middle order':'MID',
+                   'All-rounder / keeper':'A-R', 'Lower order':'LOW'};
+let div=1, scope='career', role='all', sortKey='median_pct_match_runs', desc=true, minIn=40, q='';
+const scopeLabel = () => scope==='career' ? '2014\u20132026 career' : scope;
+
+(function initScope(){
+  const sel=document.getElementById('scope');
+  sel.innerHTML = `<option value="career">2014\u20132026 career</option>` +
+    SEASONS.slice().reverse().map(y=>`<option value="${y}">${y}</option>`).join('');
+  sel.onchange = e => {
+    scope = e.target.value;
+    const mi=document.getElementById('minin');
+    mi.max = scope==='career' ? 120 : 28;
+    mi.min = scope==='career' ? 10 : 6;
+    mi.step = scope==='career' ? 5 : 2;
+    if(scope!=='career' && minIn>20) mi.value=12;
+    if(scope==='career' && minIn<20) mi.value=40;
+    minIn=+mi.value; document.getElementById('minlab').textContent=minIn;
+    render();
+  };
+})();
+
+function rows(){
+  const key = `div${div}_${scope}`;
+  let r = (DATA[key]||[]).filter(x=>x.innings>=minIn);
+  if(role!=='all') r = r.filter(x=>x.role===role);
+  if(q){ const s=q.toLowerCase();
+    r = r.filter(x=>x.player.toLowerCase().includes(s)||x.teams.toLowerCase().includes(s)); }
+  r = r.slice().sort((a,b)=>{
+    const x=a[sortKey], y=b[sortKey];
+    if(typeof x==='string') return desc ? y.localeCompare(x) : x.localeCompare(y);
+    return desc ? y-x : x-y;
+  });
+  return r;
+}
+function head(){
+  document.getElementById('head').innerHTML = COLS.map(c=>{
+    const on = (c.sortK||c.k)===sortKey;
+    return `<th class="${c.cls||''}" data-k="${c.sortK||c.k}"${on?` aria-sort="${desc?'descending':'ascending'}"`:''}>${c.t}${on?` <span class="car">${desc?'▼':'▲'}</span>`:''}</th>`;
+  }).join('');
+  document.getElementById('head').querySelectorAll('th').forEach(th=>{
+    th.onclick=()=>{ const k=th.dataset.k; if(k==='rank') return;
+      if(k===sortKey){desc=!desc}else{sortKey=k; desc=!['player','teams'].includes(k);} render(); };
+  });
+}
+function cell(c,x,i){
+  if(c.k==='rank') return `<td class="rk">${i+1}</td>`;
+  let v=x[c.k];
+  if(v===null||v===undefined||Number.isNaN(v)) return `<td>&ndash;</td>`;
+  if(c.role) return `<td><span class="role" title="${v} · ${x.role_share.toFixed(0)}% of his innings">${ROLE_CODE[v]||'&ndash;'}</span></td>`;
+  if(c.raw) return `<td>${v}</td>`;
+  if(typeof v==='number') v = v.toFixed(c.d);
+  if(c.pill) return `<td><span class="pill">${v}</span></td>`;
+  let cls=c.cls||'', style='';
+  if(c.bar){ cls+=' bar'; style=` style="--w:${Math.min(100,(x[c.k]/c.bar)*100).toFixed(1)}%"`; }
+  if(c.signed) cls += x[c.k]>0 ? ' gap-pos' : ' gap-neg';
+  if(c.signed && x[c.k]>0) v = '+'+v;
+  return `<td class="${cls.trim()}"${style}>${v}</td>`;
+}
+function render(){
+  head();
+  const r=rows();
+  document.getElementById('body').innerHTML = r.map((x,i)=>
+    `<tr>${COLS.map(c=>cell(c,x,i)).join('')}</tr>`).join('');
+  document.getElementById('count').textContent =
+    `${r.length} qualified · Division ${div} · ${scopeLabel()}` +
+    (role==='all' ? '' : ` · ${role}`);
+}
+document.querySelectorAll('[data-div]').forEach(b=>b.onclick=()=>{
+  div=+b.dataset.div;
+  document.querySelectorAll('[data-div]').forEach(o=>o.setAttribute('aria-pressed', o===b));
+  render();
+});
+document.getElementById('minin').oninput=e=>{
+  minIn=+e.target.value; document.getElementById('minlab').textContent=minIn; render(); };
+document.getElementById('role').onchange=e=>{ role=e.target.value; render(); };
+document.getElementById('q').oninput=e=>{ q=e.target.value.trim(); render(); };
+render();
+</script>

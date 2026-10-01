@@ -17,6 +17,9 @@ Metrics (per player, within a chosen division / season range):
   top_scorer_rate           n_top_scorer / innings
   top3_rate                 n_top3 / innings
   high_score                best individual innings in scope (high_score_disp adds * if not out)
+  bdry_pct                  % of his runs made in fours and sixes
+  bdry_freq                 boundaries per 100 balls faced
+  rotate                    runs per 100 balls that did not go to the boundary
   role                      band holding most of his innings: 1-2 Opener, 3-5 Middle order,
                             6-7 All-rounder / keeper, 8-11 Lower order (role_share = that %)
 
@@ -72,6 +75,8 @@ def player_metrics(b, group_cols=("player_id",), min_innings=1):
         innings=("runs", "size"),
         runs=("runs", "sum"),
         balls=("balls", "sum"),
+        fours=("fours", "sum"),
+        sixes=("sixes", "sum"),
         dismissals=("out", "sum"),
         hundreds=("runs", lambda s: int((s >= 100).sum())),
         fifties=("runs", lambda s: int(((s >= 50) & (s < 100)).sum())),
@@ -88,6 +93,17 @@ def player_metrics(b, group_cols=("player_id",), min_innings=1):
                              + np.where(ii.high_score_not_out, "*", ""))
 
     ii["average"] = ii.runs / ii.dismissals.replace(0, np.nan)
+    ii["strike_rate"] = 100 * ii.runs / ii.balls.replace(0, np.nan)
+    # Cricsheet carries no all-run-four flag in this archive, so a boundary is any
+    # 4 or 6 off the bat; a handful of all-run fours are counted as boundaries.
+    ii["bdry_runs"] = 4 * ii.fours + 6 * ii.sixes
+    ii["bdry_pct"] = 100 * ii.bdry_runs / ii.runs.replace(0, np.nan)
+    ii["bdry_freq"] = 100 * (ii.fours + ii.sixes) / ii.balls.replace(0, np.nan)
+    # runs per 100 balls that did not go to the boundary: a strike-rotation proxy.
+    # Root and Hain share a boundary %, but Root's comes from rotating at ~40 and
+    # Hain's from hitting far fewer boundaries while rotating at the pool median.
+    ii["rotate"] = (100 * (ii.runs - ii.bdry_runs)
+                    / (ii.balls - ii.fours - ii.sixes).replace(0, np.nan))
     ii["share_team_runs"] = 100 * ii.runs / ii.team_runs_in_those_innings
     ii["top_scorer_rate"] = 100 * ii.n_top_scorer / ii.innings
     ii["top3_rate"] = 100 * ii.n_top3 / ii.innings
@@ -139,7 +155,8 @@ def player_metrics(b, group_cols=("player_id",), min_innings=1):
                                  "pctl_top_scorer_rate", "pctl_top3_rate"]].mean(axis=1).round(1)
     cols = ["player", "teams", "seasons", "innings", "matches", "runs", "balls",
             "average", "high_score", "high_score_not_out", "high_score_disp",
-            "hundreds", "fifties",
+            "hundreds", "fifties", "strike_rate",
+            "fours", "sixes", "bdry_runs", "bdry_pct", "bdry_freq", "rotate",
             "role", "role_share", "median_bat_pos",
             "pct_pos_1_2", "pct_pos_3_5", "pct_pos_6_7", "pct_pos_8_11",
             "share_team_runs", "share_team_runs_home", "share_team_runs_away",

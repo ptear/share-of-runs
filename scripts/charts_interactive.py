@@ -29,7 +29,8 @@ QUAD = [(XL[1], YL[1], "Good by both", "right", "top"),
 PLOTLY_CDN = "https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.0.1/plotly.min.js"
 TITLE = "Batting average against median % of match runs — Division 1 specialist batters"
 HOVER_COLS = ["player", "season", "teams", "role", "innings", "runs",
-              "high_score_disp", "pct_team_runs", "top_scorer_rate", "composite_pctl"]
+              "high_score_disp", "pct_team_runs", "top_scorer_rate", "composite_pctl",
+              "strike_rate", "bdry_pct", "rotate"]
 
 
 def groups(mode):
@@ -73,7 +74,9 @@ def plotly_chart(mode):
                     "average <b>%{x:.1f}</b> · median %% of match runs <b>%{y:.2f}%</b><br>"
                     "%{customdata[4]} inns · %{customdata[5]} runs · HS %{customdata[6]}<br>"
                     "%{customdata[7]:.1f}%% of team runs · top scorer %{customdata[8]:.0f}%% "
-                    "of inns<br>composite %{customdata[9]:.1f}<extra></extra>")))
+                    "of inns<br>SR %{customdata[10]:.1f} · boundary %{customdata[11]:.1f}%% · "
+                    "rotate %{customdata[12]:.1f}<br>composite %{customdata[9]:.1f}"
+                    "<extra></extra>")))
     per = len(order)
     buttons = []
     for i, panel in enumerate(PANELS):
@@ -142,6 +145,10 @@ def altair_chart(mode):
                  alt.Tooltip("med_pct_match:Q", title="median % match runs", format=".2f"),
                  alt.Tooltip("pct_team_runs:Q", title="% of team runs", format=".1f"),
                  alt.Tooltip("top_scorer_rate:Q", title="top scorer %", format=".0f"),
+                 alt.Tooltip("strike_rate:Q", title="strike rate", format=".1f"),
+                 alt.Tooltip("bdry_pct:Q", title="boundary %", format=".1f"),
+                 alt.Tooltip("rotate:Q", title="rotate (runs/100 non-bdry balls)",
+                             format=".1f"),
                  alt.Tooltip("composite_pctl:Q", title="composite", format=".1f")])
     pts = base.mark_point(filled=True, stroke=SURFACE, strokeWidth=1).encode(**enc)
     labels = (base.transform_filter(alt.FieldOneOfPredicate("player", list(HIGHLIGHT)))
@@ -217,6 +224,7 @@ def bokeh_chart(mode):
             median % match runs <b>@med_pct_match{0.00}%</b></div>
           <div>@innings inns · @runs runs · HS @high_score_disp</div>
           <div>@pct_team_runs{0.0}% of team runs · top scorer @top_scorer_rate{0}% of inns</div>
+          <div>SR @strike_rate{0.0} · boundary @bdry_pct{0.0}% · rotate @rotate{0.0}</div>
           <div>composite @composite_pctl{0.0}</div>
         </div>"""))
     sel = Select(title="Season", value="2022–2026", options=PANELS, width=200)

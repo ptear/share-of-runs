@@ -33,9 +33,38 @@ HEAD = """<meta charset="utf-8">
 """
 
 
+PAYLOAD_COLS = ["player", "teams", "median_bat_pos", "role", "role_share", "innings",
+                "runs", "average", "strike_rate", "high_score", "high_score_disp",
+                "bdry_pct", "bdry_freq", "rotate",
+                "share_team_runs", "share_team_runs_home", "share_team_runs_away",
+                "home_away_gap", "pct_runs_at_home_ground", "mean_pct_match_runs",
+                "median_pct_match_runs", "n_top_scorer", "top_scorer_rate",
+                "n_top3", "top3_rate", "composite_pctl"]
+
+
+def build_payload(path="leaderboard.json"):
+    """Career + per-season tables for both divisions, as one JSON blob for the page."""
+    def recs(df, cols):
+        df = df[cols].round(2)
+        return df.astype(object).where(pd.notna(df), None).to_dict("records")
+
+    out, seasons = {}, set()
+    for div in (1, 2):
+        c = pd.read_csv(f"player_rankings_div{div}_career.csv")
+        out[f"div{div}_career"] = recs(c, PAYLOAD_COLS + ["seasons"])
+        s = pd.read_csv(f"player_rankings_div{div}_by_season.csv")
+        for yr, grp in s.groupby("season"):
+            seasons.add(int(yr))
+            out[f"div{div}_{yr}"] = recs(grp, PAYLOAD_COLS)
+    out["_seasons"] = sorted(seasons)
+    txt = json.dumps(out, separators=(",", ":"), allow_nan=False)  # NaN is not valid JSON
+    open(path, "w").write(txt)
+    return txt
+
+
 def build_index():
     frag = open("page_template.html").read()
-    data = open("leaderboard.json").read()
+    data = build_payload()
     frag = frag.replace("__DATA__", data)
     # nav + head, and mark the current page
     frag = frag.replace("</style>", NAV_CSS + "</style>")
@@ -59,15 +88,28 @@ LIBS = [
 ]
 MODE_LABEL = {"performers": "Top performers", "position": "Batting position", "team": "County"}
 MODE_NOTE = {
-    "performers": "The four players with more than one top-five composite finish since 2022 "
-                  "are coloured; everyone else is grey. Marker shape shows batting position.",
-    "position": "Coloured by the band holding most of a player's innings. The four performers "
-                "keep a dark ring so they stay findable.",
+    "performers": "Coloured: the three players with the best mean season rank on median share "
+                  "of match runs, among the 34 with at least four qualifying Division 1 seasons "
+                  "since 2022. Their means are 11.6, 16.4 and 20.0; the next five sit between "
+                  "22.4 and 23.3, so the cut falls in a real gap rather than at an arbitrary "
+                  "top-N. Everyone else is grey; marker shape shows batting position.",
+    "position": "Coloured by the band holding most of a player's innings. The three highlighted "
+                "batters keep a dark ring so they stay findable.",
     "team": "Coloured by county. Seventeen counties appear across the five seasons and no "
             "seventeen-colour scheme stays reliably separable — least of all for colourblind "
             "readers — so treat this as exploratory: identify points from the hover in the "
             "interactive versions rather than from the colour alone.",
 }
+
+
+RANK_FILE = {"plotly": "charts/ranks_plotly.html", "altair": "charts/ranks_altair.html",
+             "bokeh": "charts/ranks_bokeh.html", "matplotlib": "charts/ranks_matplotlib.png",
+             "seaborn": "charts/ranks_seaborn.png", "plotnine": "charts/ranks_plotnine.png"}
+
+RANK_NOTE = ("Rank on median % of match runs within each season's qualified pool "
+             "(12 innings, 84–98 batters), best at the top on a log scale. A gap is a "
+             "season the player did not qualify — Cox has no 2026 — and is left open "
+             "rather than interpolated.")
 
 
 def static_file(lib, mode):
@@ -93,11 +135,24 @@ def build_charts():
                     else f'<a href="{src}"><img src="{src}" alt="{name}, {MODE_LABEL[mode]}" '
                          f'loading="lazy"></a>')
             panes.append(
-                f'<section class="pane" data-lib="{lib}" data-mode="{mode}" hidden>'
+                f'<section class="pane" data-lib="{lib}" data-chart="scatter" '
+                f'data-mode="{mode}" hidden>'
                 f'<p class="blurb"><b>{name}</b> — {blurb}</p>'
                 f'{body}'
                 f'<p class="open"><a href="{src}" target="_blank" rel="noopener">'
                 f'Open this view on its own →</a></p></section>')
+    for lib, name, kind, blurb in LIBS:
+        src = RANK_FILE[lib]
+        body = (f'<iframe src="{src}" title="{name}, rank trajectory" loading="lazy"></iframe>'
+                if kind == "interactive"
+                else f'<a href="{src}"><img src="{src}" alt="{name}, rank trajectory" '
+                     f'loading="lazy"></a>')
+        panes.append(
+            f'<section class="pane" data-lib="{lib}" data-chart="ranks" hidden>'
+            f'<p class="blurb"><b>{name}</b> — {blurb}</p>{body}'
+            f'<p class="open"><a href="{src}" target="_blank" rel="noopener">'
+            f'Open this view on its own →</a></p></section>')
+
     html = f"""{DOCTYPE}{HEAD}<title>Average vs Share</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -138,8 +193,11 @@ img{{max-width:100%; border:1px solid var(--rule); background:var(--panel)}}
 
 <div class="wrap">
   {NAV.replace('<a href="charts.html" data-page="charts">', '<a href="charts.html" data-page="charts" aria-current="page">')}
-  <h1>Average against share of match runs</h1>
-  <p class="sub">Division 1 specialist batters, 2022&ndash;2026, minimum 12 innings in a season.
+  <h1>Two views of the same five seasons</h1>
+  <p class="sub"><b>Average vs share</b> plots the conventional measure against the
+  pitch-normalised one; <b>rank by season</b> tracks the three best batters on median share
+  over time. Each is drawn by all six plotting libraries from one shared dataset.
+  Division 1 specialist batters, 2022&ndash;2026, minimum 12 innings in a season.
   The horizontal axis is the conventional batting average; the vertical axis is the median
   share of all runs scored in the match. The quadrants split at the field medians, so the
   off-diagonal corners are the interesting ones: high average with a low share means the runs
@@ -147,8 +205,11 @@ img{{max-width:100%; border:1px solid var(--rule); background:var(--panel)}}
   poor top-order batters visible in the bottom-left.</p>
 
   <div class="controls">
+    <div class="group"><span class="lab">Chart</span>
+      <button class="tab" data-chart="scatter" aria-pressed="true">Average vs share</button>
+      <button class="tab" data-chart="ranks">Rank by season</button></div>
     <div class="group"><span class="lab">Library</span>{tabs_lib}</div>
-    <div class="group"><span class="lab">Colour by</span>{tabs_mode}</div>
+    <div class="group" id="modegroup"><span class="lab">Colour by</span>{tabs_mode}</div>
   </div>
   <p class="note" id="modenote"></p>
   {''.join(panes)}
@@ -156,23 +217,31 @@ img{{max-width:100%; border:1px solid var(--rule); background:var(--panel)}}
 
 <script>
 const NOTES = {json.dumps(MODE_NOTE)};
-let lib = "plotly", mode = "performers";
+const RANK_NOTE = {json.dumps(RANK_NOTE)};
+let lib = "plotly", mode = "performers", chart = "scatter";
 function show() {{
   document.querySelectorAll('.pane').forEach(p => {{
-    p.hidden = !(p.dataset.lib === lib && p.dataset.mode === mode);
+    p.hidden = !(p.dataset.lib === lib && p.dataset.chart === chart &&
+                 (chart === "ranks" || p.dataset.mode === mode));
   }});
+  document.getElementById('modegroup').hidden = chart !== "scatter";
+  document.querySelectorAll('.tab[data-chart]').forEach(b =>
+    b.setAttribute('aria-pressed', b.dataset.chart === chart));
   document.querySelectorAll('[data-lib]').forEach(b => {{
     if (b.classList.contains('tab')) b.setAttribute('aria-pressed', b.dataset.lib === lib);
   }});
   document.querySelectorAll('[data-mode]').forEach(b => {{
     if (b.classList.contains('tab')) b.setAttribute('aria-pressed', b.dataset.mode === mode);
   }});
-  document.getElementById('modenote').textContent = NOTES[mode];
+  document.getElementById('modenote').textContent =
+    chart === "ranks" ? RANK_NOTE : NOTES[mode];
 }}
 document.querySelectorAll('.tab[data-lib]').forEach(b =>
   b.onclick = () => {{ lib = b.dataset.lib; show(); }});
 document.querySelectorAll('.tab[data-mode]').forEach(b =>
   b.onclick = () => {{ mode = b.dataset.mode; show(); }});
+document.querySelectorAll('.tab[data-chart]').forEach(b =>
+  b.onclick = () => {{ chart = b.dataset.chart; show(); }});
 show();
 </script>
 """
@@ -183,7 +252,7 @@ show();
 DATA_FILES = [
     "player_rankings_div1_career.csv", "player_rankings_div2_career.csv",
     "player_rankings_div1_by_season.csv", "player_rankings_div2_by_season.csv",
-    "scatter_data.csv", "matches.csv",
+    "scatter_data.csv", "rank_data.csv", "matches.csv",
 ]
 
 
@@ -212,6 +281,15 @@ a{{color:#7fbd92}} span{{color:#9daba2}}}}</style>
 """)
     return rows
 
+
+GITIGNORE = """# the rebuild workspace: unpacked match files, the 24 MB Cricsheet zip,
+# and the intermediate CSVs. Nothing in here belongs in the repository.
+build/
+
+__pycache__/
+*.pyc
+.venv/
+"""
 
 README = """# Share of Runs
 
@@ -249,17 +327,57 @@ GitHub serves every file as-is.
 
 ## Rebuilding
 
+One command. It downloads the current Cricsheet archive, rebuilds everything and
+copies the finished site over the repository root:
+
 ```bash
-python3 cch_etl.py            # Cricsheet JSON  ->  matches.csv, innings_bat.csv
-python3 cch_metrics.py --division 1 --min-innings 40 --min-innings-season 6
-python3 cch_metrics.py --division 2 --min-innings 40 --min-innings-season 6
-python3 chart_common.py       # scatter_data.csv
-python3 charts_static.py      # matplotlib, seaborn, plotnine
-python3 charts_interactive.py # plotly, altair, bokeh
-python3 site_build.py         # assembles site/
+./scripts/rebuild.sh
 ```
 
-Requires: pandas, matplotlib, seaborn, plotnine, plotly, altair, bokeh.
+| | |
+|---|---|
+| `--force` | re-run the ETL even if the archive is unchanged |
+| `--zip FILE` | use a local archive instead of downloading |
+| `--workdir DIR` | working folder (default `./build`) |
+
+If the downloaded archive is byte-identical to the last build's, the ETL is
+skipped and the existing `innings_bat.csv` / `matches.csv` are reused — so a
+re-run when Cricsheet has published nothing new costs seconds rather than
+minutes. The script prints the archive's match count and the latest match date
+in the data, which is how you tell whether new rounds have landed.
+
+The ~830 MB of unpacked match JSONs are deleted once the ETL has consumed them.
+The 24 MB zip is kept, so re-runs need no download and the exact snapshot a build
+came from stays on disk.
+
+### Python environment
+
+The scripts need pandas, matplotlib, seaborn, plotnine, plotly, altair and bokeh.
+They are **not** in a system Python by default — `scripts/requirements.txt` lists
+them. With [uv](https://docs.astral.sh/uv/) installed there is nothing to set up:
+each step runs via `uv run --with-requirements`, an ephemeral environment with
+nothing to create or activate.
+
+Without uv, make a virtual environment first and the scripts will use it:
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r scripts/requirements.txt
+./scripts/rebuild.sh
+```
+
+### Running a single step
+
+`scripts/_run.sh` runs one script in the same environment, from the working
+folder:
+
+```bash
+cd build && ../scripts/_run.sh cch_metrics.py --division 2 --min-innings 30
+```
+
+The pipeline in order: `cch_etl.py` (JSON → `matches.csv`, `innings_bat.csv`),
+`cch_metrics.py` per division, `chart_common.py` (`scatter_data.csv`),
+`charts_static.py`, `charts_interactive.py`, `charts_ranks.py`, `site_build.py`.
 
 ## Notes on method
 
@@ -280,6 +398,7 @@ if __name__ == "__main__":
     rows = build_data()
     open(f"{SITE}/README.md", "w").write(README)
     open(f"{SITE}/.nojekyll", "w").write("")
+    open(f"{SITE}/.gitignore", "w").write(GITIGNORE)
     print(f"index.html {n1/1024:,.0f} KB · charts.html {n2/1024:,.0f} KB")
     print("data:", ", ".join(f for f, _ in rows))
     total = sum(os.path.getsize(os.path.join(r, f))
